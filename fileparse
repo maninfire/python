@@ -1,0 +1,66 @@
+读取文本中所有的内容
+def readfile(txt):
+    print "hello"
+    file_object = open(txt)
+    try:
+        all_the_text = file_object.read()
+    finally:
+        file_object.close()
+    return all_the_text
+读取每一行，然后解析成map
+def parsetomap(data):
+    f=open(data)
+    lines = f.readlines()
+    mapping={}
+    for line in lines:
+        name,value=line.split()
+        mapping[name]=value
+    f.close
+    return mapping
+
+
+http请求发送
+
+def post(url, data):  
+    req = urllib2.Request(url)  
+    data = urllib.urlencode(data)  
+    #enable cookie  
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())  
+    response = opener.open(req, data)  
+    return response.read()
+
+def test():
+    posturl = "http://www.xiami.com/member/login"  
+    data = {'email':'myemail', 'password':'mypass', 'autologin':'1', 'submit':'登 录', 'type':''}  
+    print post(posturl, data) 
+    
+def posthead():  
+    params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})  
+    headers = {"Host": "fd.3.cn",
+               "User-Agent":"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:57.0) Gecko/20100101 Firefox/57.0",
+               "Accept": "*/*",
+               "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
+               "Accept-Encoding": "gzip, deflate, br",
+               "Referer":"https://www.jd.com/?cu=true&utm_source=kong&utm_medium=tuiguang&utm_campaign=t_1000091523_899cc3d4e27d9324&utm_term=e718373fa27b484f90c8c97b881fb24f&abt=3",
+               "Cookie": "BAIDUID=F5F816D35DA34B807FD8933674320EE5:FG=1; BIDUPSID=F5F816D35DA34B807FD8933674320EE5; PSTM=1511147580; BD_HOME=0; H_PS_PSSID=1469_12897_21100_22160; BD_UPN=13314352; BDORZ=B490B5EBF6F3CD402E515D22BCDA1598",
+               "Connection": "keep-alive",
+               "Upgrade-Insecure-Requests": 1,
+               "Cache-Control": "max-age=0"}
+    conn = httplib.HTTPConnection("https://fd.3.cns",80)
+    datapost={"appid":"yidian" ,"cv":"4.5.3.11","distribution":"com.apple.appstore","idfa":"5ddc9563e08e8d0d0f5c005f505832c3","net":"wifi",
+              "password":"fe8ac064c15b397b49453696bcd9c21607b26f7f","platform":"0","reqid":"1510882746117_12","secret":"765240265d078e19e54ac567a6b936306dfedf64",
+              "username":"HG_DB7F032ED791","version":"020130"
+}
+    conn.request("GET", "https://fd.3.cn/cesu/r", headers=headers)
+    response = conn.getresponse()  
+    print response
+    
+    data = response.read()
+    print data
+    conn.close()
+
+def gethttp():
+    request = urllib2.Request('http://www.baidu.com/')
+    request.add_header('User-Agent', 'fake-client')
+    response = urllib2.urlopen(request)
+    print response.read()    
