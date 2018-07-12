@@ -66,6 +66,9 @@ tags = { 0x1 :   "TAINT_LOCATION",      0x2: "TAINT_CONTACTS",        0x4: "TAIN
          0x10000: "TAINT_OTHERDB",      0x20000: "TAINT_FILECONTENT", 0x40000: "TAINT_PACKAGE",    0x80000: "TAINT_CALL_LOG",
          0x100000: "TAINT_EMAIL",       0x200000: "TAINT_CALENDAR",   0x400000: "TAINT_SETTINGS" }
 
+
+emulatorpath="D:\\Users\\andorid\\sdk\\tools\\"
+monkeyrunnerpath="D:\\Users\\andorid\\sdk\\tools\\bin\\"
 class CountingThread(Thread):
     """
     Used for user interface, showing in progress sign 
@@ -304,9 +307,9 @@ def begin(file,dura):
 		sys.exit(1)
 	mypath=os.path.dirname(os.path.realpath(__file__))
 	#Execute the application
-	monkeyrunnerpath="D:\\Users\\andorid\sdk\\tools\\bin\\"
-	retheart = call([monkeyrunnerpath+'monkeyrunner.bat', mypath+'\\monkeyrunner.py', mypath+'\\heart.apk', "com.qiye.txz.heartbeatdetect", "com.qiye.txz.heartbeatdetect.MainActivity"], stderr=PIPE, cwd=os.path.dirname(os.path.realpath(__file__)))
-	ret = call([monkeyrunnerpath+'monkeyrunner.bat', mypath+'\\monkeyrunner.py', apkName, packageName, mainActivity], stderr=PIPE, cwd=os.path.dirname(os.path.realpath(__file__)))#
+
+	retheart = call(['monkeyrunner','monkeyrunner.py', 'heart.apk', "com.qiye.txz.heartbeatdetect", "com.qiye.txz.heartbeatdetect.MainActivity"], stderr=PIPE, cwd=os.path.dirname(os.path.realpath(__file__)))
+	ret = call(['monkeyrunner', 'monkeyrunner.py', apkName, packageName, mainActivity], stderr=PIPE, cwd=os.path.dirname(os.path.realpath(__file__)))#
 	#ret = os.system(monkeyrunnerpath+"monkeyrunner.bat "+mypath+"\\monkeyrunner.py"+" "+apkName+" "+packageName+" "+mainActivity)#
 	if (retheart == 1):
 		print("Failed to execute the heart.")
@@ -315,7 +318,7 @@ def begin(file,dura):
 		print("Failed to execute the application.")
 		sys.exit(1)
 
-	print("Starting the activity %s..." % mainActivity)
+	#print("Starting the activity %s..." % mainActivity)
 
 	#By default the application has not started
 	applicationStarted = 0
@@ -341,13 +344,13 @@ def begin(file,dura):
 
 	if (applicationStarted == 0):
 		print("Analysis has not been done.")
-		os.kill(adb.pid)
+		#os.kill(adb.pid)
 		#, signal.SIGTERM)
 		sys.exit(1)
 		#Kill ADB, otherwise it will never terminate
 
 	print("Application started")
-	print("Analyzing the application during %s seconds..." % (duration if (duration !=0) else "infinite time"))
+	#print("Analyzing the application during %s seconds..." % (duration if (duration !=0) else "infinite time"))
 
 	#count = CountingThread()
 	#count.start()
@@ -359,13 +362,17 @@ def begin(file,dura):
 		print "hello"
 	#Collect DroidBox logs
 	breaksign=0
+	if os.path.exists(mypath+'/log.txt'):
+		os.system("del "+mypath+"/log.txt")
+	fp=open(mypath+"/log.txt",'a')
 	while 1:
 	    try:
-			logcatInput = adb.stdout.readline() 
+			logcatInput = adb.stdout.readline()
 			if not logcatInput:
 				raise Exception("We have lost the connection with ADB.")
-			
 			boxlog = logcatInput.split('360Qiyemon-apimonitor-'+packageName+':')
+			if len(boxlog) > 1:
+				fp.writelines(logcatInput)
 			if not len(boxlog)>1:
 				boxlog = logcatInput.split('360Qiyemon-apimonitor-heartbeatsignal:')
 			#boxlog1="{\"result\":\"java.lang.String->compareToIgnoreCase\",\"this\":\"\",\"PID\":2187,\"TID\":2187,\"UID\":10028,\"Method\":\"java.lang.StringBuilder->toString\",\"Funtion\":\"toString\",\"Time\":1531276365049}\r\r\n"
@@ -479,9 +486,9 @@ def begin(file,dura):
 						#count.increaseCount()
 						breaksign=0
 					elif load['Function']=='heartbeat':
-						breaksign=+1
-						if breaksign==5:
-							break;
+						breaksign+=1
+						if breaksign==2000:
+							break
 						print "continue"
 					else:
 						breaksign=0
@@ -493,7 +500,7 @@ def begin(file,dura):
 	    except:
 			break
 			pass
-	    
+	fp.close()
 	#Kill ADB, otherwise it will never terminate
 	#os.kill(adb.pid)
 	#os.popen('taskkill.exe /pid:'+adb.pid)
@@ -524,20 +531,44 @@ def begin(file,dura):
 	output["apkName"] = apkName
 	pathtemp = sys.path[0]
 	os.chdir(pathtemp)
-	f=open(mypath+'\\log\\droidboxlog_'+time.strftime("%Y-%m-%d-%H%M%S", time.localtime())+'.json','w') #+ time.strftime('%H:%M_%Y%m%d')
+	f=open(mypath+'/log/droidboxlog_'+time.strftime("%Y-%m-%d-%H%M%S", time.localtime())+'.json','w') #+ time.strftime('%H:%M_%Y%m%d')
 	f.write(json.dumps(output,sort_keys=True, indent=4, separators=(',', ':')))
 	f.close()
 
 
 	print(json.dumps(output))
+	#log=Popen(['adb','logcat','360Qiyemon-apimonitor-'+packageName])
+	#log=Popen(["adb", "logcat", "360Qiyemon-apimonitor-"+packageName,"*:S"])
+	
+	#print log
+
+	
 	#sys.exit(0)
+def devicesfind():
+	ret = Popen(['adb','devices'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	logcatInput="ture"
+	while logcatInput!="":
+		logcatInput = ret.stdout.readline()
+		if not logcatInput:
+			return False
+			#raise Exception("We have lost the connection with ADB.")
+		boxlog = logcatInput.split('emulator')
+		if len(boxlog) > 1:
+			return True
+	
+
 def main():
+	#emulator -avd testavd -writable-system -partition-size 200 -no-snapshot-save
+	#-no-snapshot-load
+	if not devicesfind():
+		ret = Popen(['emulator','-avd', 'testavd', '-writable-system', '-partition-size','2000','-no-snapshot-save'])
+	#print ret
 	path = os.path.dirname(os.path.realpath(__file__)) #文件夹目录
-	files= os.listdir(path+"\\file") #得到文件夹下的所有文件名称
+	files= os.listdir(path+"/file") #得到文件夹下的所有文件名称
 	s = []
 	for file in files:
 		#遍历文件夹
 		if not os.path.isdir(file):
-			begin(path+"\\file\\"+file,0)
+			begin(path+"/file/"+file,0)
 if __name__ == "__main__":
 	main()
