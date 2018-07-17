@@ -256,7 +256,7 @@ def interruptHandler(signum, frame):
 	"""
     raise KeyboardInterrupt	
 
-def begin(file,dura):		    
+def begin(file,dura,eport):		    
 	duration = dura
 
 	#Duration given?
@@ -289,7 +289,7 @@ def begin(file,dura):
 	#curses.setupterm()
 	#sys.stdout.write(curses.tigetstr("clear"))
 	#sys.stdout.flush()
-	call(['adb', 'logcat', '-c'])
+	call(['adb','-s','emulator-'+eport, 'logcat', '-c'])
 
 	print u" ____                        __  ____"
 	print u"/\  _`\               __    /\ \/\  _`\\"
@@ -311,8 +311,8 @@ def begin(file,dura):
 	mypath=os.path.dirname(os.path.realpath(__file__))
 	#Execute the application
 
-	retheart = call(['monkeyrunner','monkeyrunner.py', 'heart.apk', "com.qiye.txz.heartbeatdetect", "com.qiye.txz.heartbeatdetect.MainActivity"], stderr=PIPE, cwd=os.path.dirname(os.path.realpath(__file__)))
-	ret = call(['monkeyrunner', 'monkeyrunner.py', apkName, packageName, mainActivity], stderr=PIPE, cwd=os.path.dirname(os.path.realpath(__file__)))#
+	retheart = call(['monkeyrunner','-p',eport,'monkeyrunner.py', 'heart.apk', "com.qiye.txz.heartbeatdetect", "com.qiye.txz.heartbeatdetect.MainActivity"], stderr=PIPE, cwd=os.path.dirname(os.path.realpath(__file__)))
+	ret = call(['monkeyrunner', '-p',eport,'monkeyrunner.py', apkName, packageName, mainActivity], stderr=PIPE, cwd=os.path.dirname(os.path.realpath(__file__)))#
 	#ret = os.system(monkeyrunnerpath+"monkeyrunner.bat "+mypath+"\\monkeyrunner.py"+" "+apkName+" "+packageName+" "+mainActivity)#
 	if (retheart == 1):
 		print("Failed to execute the heart.")
@@ -329,7 +329,7 @@ def begin(file,dura):
 	stringpackageName=" %s" % packageName
 
 	#Open the adb logcat
-	adb = Popen(["adb", "logcat", "360Qiyemono:D", "dalvikvm:W", "ActivityManager:I","*:S"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	adb = Popen(["adb","-s", "emulator-"+eport, "logcat", "360Qiyemono:D", "dalvikvm:W", "ActivityManager:I","*:S"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 	#Wait for the application to start
 	while 1:
@@ -548,25 +548,39 @@ def begin(file,dura):
 	
 	#sys.exit(0)sss
 def devicesfind():
+	ipport=[]
+	find = False
 	ret = Popen(['adb','devices'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 	logcatInput="ture"
 	while logcatInput!="":
 		logcatInput = ret.stdout.readline()
 		if not logcatInput:
-			return False
-			#raise Exception("We have lost the connection with ADB.")d
-		boxlog = logcatInput.split('emulator')
+			for i in range(0,len(ipport)):
+				if len(workavdip)<i:
+					freeavdip.append(ipport[i])
+					continue
+				for j in workavdip:
+					if  ipport[i]==j:
+						find = True
+						break
+					find=False
+				if find==False:
+					freeavdip.append(ipport[i])
+				find=False
+			return 
+			#raise Exception("We have lost the connection with ADB.")
+		boxlog = logcatInput.split('emulator-')
+		
 		if len(boxlog) > 1:
-			freeavdip.append(boxlog[1])
-			return True
-	
-def startavdfinished():
+			ipport.append(boxlog[1].split('\tdevice')[0])
+
+def startavdfinished(eport):
 	applicationStarted = 0
 	stringApplicationStarted = "Start proc com.android.systemui"
 	stringpackageName="Start proc com.google.android.googlequicksearchbox"
 
 	#Open the adb logcat的
-	adb = Popen(["adb", "logcat", "dalvikvm:W", "ActivityManager:I","*:S"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	adb = Popen(["adb","-s", "emulator-"+eport, "logcat", "dalvikvm:W", "ActivityManager:I","*:S"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 	#Wait for the application to start
 	while 1:
@@ -587,9 +601,15 @@ def startavdfinished():
 def main():
 	#emulator -avd testavd -writable-system -partition-size 200 -no-snapshot-save
 	#-no-snapshot-load
-	if not devicesfind():
-		ret = Popen(['emulator','-avd', 'testavd', '-writable-system', '-partition-size','2000','-no-snapshot-save'])
-		startavdfinished()
+	workavdip.append("5554")
+	workavdip.append("5556")
+	workavdip.append("5558")
+	#del workavdip[0]
+	devicesfind()
+	if len(freeavdip)==0:
+		ret = Popen([emulatorpath+'emulator','-avd', 'testavd','-writable-system','-partition-size','2000','-no-snapshot-save'])#'system-writable'
+		devicesfind()
+		startavdfinished("5554")
 	#print ret
 	path = os.path.dirname(os.path.realpath(__file__)) #文件夹目录
 	files= os.listdir(path+"/file") #得到文件夹下的所有文件名称
@@ -597,6 +617,6 @@ def main():
 	for file in files:
 		#遍历文件夹ddDddddd
 		if not os.path.isdir(file):
-			begin(path+"/file/"+file,0)
+			begin(path+"/file/"+file,0,"5554")
 if __name__ == "__main__":
 	main()
