@@ -555,13 +555,37 @@ def devicesfind():
 		boxlog = logcatInput.split('emulator')
 		if len(boxlog) > 1:
 			return True
-	
+def startavdfinished():
+	applicationStarted = 0
+	stringApplicationStarted = "Start proc com.android.systemui"
+	stringpackageName="Start proc com.google.android.googlequicksearchbox"
+
+	#Open the adb logcat
+	adb = Popen(["adb", "logcat", "dalvikvm:W", "ActivityManager:I","*:S"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+	#Wait for the application to start
+	while 1:
+		try:
+			logcatInput = adb.stdout.readline()
+			if not logcatInput:
+				raise Exception("We have lost the connection with ADB.")
+			#Application started?
+			if (stringApplicationStarted in logcatInput):
+				#if(stringpackageName in logcatInput):
+				#applicationStarted = 1
+				#os.kill(adb.pid)
+				#time.sleep(2)
+				break
+		except:
+			print "avdstarterror"
+			sys.exit(0)	
 
 def main():
 	#emulator -avd testavd -writable-system -partition-size 200 -no-snapshot-save
 	#-no-snapshot-load
 	if not devicesfind():
 		ret = Popen(['emulator','-avd', 'testavd', '-writable-system', '-partition-size','2000','-no-snapshot-save'])
+		startavdfinished()
 	#print ret
 	path = os.path.dirname(os.path.realpath(__file__)) #文件夹目录
 	files= os.listdir(path+"/file") #得到文件夹下的所有文件名称
