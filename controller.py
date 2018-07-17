@@ -46,6 +46,9 @@ from matplotlib.font_manager import FontProperties
 
 from collections import OrderedDict
 
+workavdip = []
+freeavdip=[]
+
 sendsms = {}
 phonecalls = {}
 cryptousage = {}
@@ -545,16 +548,33 @@ def begin(file,dura):
 	
 	#sys.exit(0)
 def devicesfind():
+	ipport=[]
+	find = False
 	ret = Popen(['adb','devices'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 	logcatInput="ture"
 	while logcatInput!="":
 		logcatInput = ret.stdout.readline()
 		if not logcatInput:
-			return False
+			for i in range(0,len(ipport)):
+				if len(workavdip)<i:
+					freeavdip.append(ipport[i])
+					continue
+				for j in workavdip:
+					if  ipport[i]==j:
+						find = True
+						break
+					find=False
+				if find==False:
+					freeavdip.append(ipport[i])
+				find=False
+			return 
 			#raise Exception("We have lost the connection with ADB.")
-		boxlog = logcatInput.split('emulator')
+		boxlog = logcatInput.split('emulator-')
+		
 		if len(boxlog) > 1:
-			return True
+			ipport.append(boxlog[1].split('\tdevice')[0])
+			#if "\tdevice\r\n"
+			#return True
 def startavdfinished():
 	applicationStarted = 0
 	stringApplicationStarted = "Start proc com.android.systemui"
@@ -583,8 +603,14 @@ def startavdfinished():
 def main():
 	#emulator -avd testavd -writable-system -partition-size 200 -no-snapshot-save
 	#-no-snapshot-load
-	if not devicesfind():
-		ret = Popen(['emulator','-avd', 'testavd', '-writable-system', '-partition-size','2000','-no-snapshot-save'])
+	workavdip.append("5554")
+	workavdip.append("5556")
+	workavdip.append("5558")
+	#del workavdip[0]
+	devicesfind()
+	if len(freeavdip)==0:
+		ret = Popen([emulatorpath+'emulator','-avd', 'testavd','-writable-system','-partition-size','2000','-no-snapshot-save'])#'system-writable'
+		devicesfind()
 		startavdfinished()
 	#print ret
 	path = os.path.dirname(os.path.realpath(__file__)) #文件夹目录
